@@ -22,8 +22,18 @@ type SkipList struct {
     level int
 }
 
+type SkipListError struct {
+    msg string
+}
+
 var randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
 
+
+// SkipList error object
+// return error message
+func (err *SkipListError) Error() string {
+    return err.msg
+}
 
 // private function for create SkipListNode
 // return SkipListNode pointer
@@ -97,3 +107,38 @@ func (l *SkipList) Insert(key int, val interface{}) {
     }
 }
 
+
+// find the value of search key
+// return the value
+func (l *SkipList) Find(key int) (val interface{}, err error) {
+    var q *SkipListNode
+
+    p := l.header
+    k := l.level
+
+    for i := k - 1; i >= 0; i-- {
+        for {
+            q = p.forward[i]
+
+            if q != nil && q.key <= key {
+                if q.key == key {
+                    return q.val, nil
+                }
+
+                p = q
+
+                continue
+            }
+            break
+        }
+    }
+
+    return nil, &SkipListError{"Not found key"}
+}
+
+
+// delete the value of search key
+// return error by failed or nil by success
+func (l *SkipList) Delete(key int) error {
+
+}
