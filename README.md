@@ -1,4 +1,4 @@
-go-redis-server
-===============
+Redis
+=====
 
 Redis server implement by Golang
