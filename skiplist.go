@@ -1,13 +1,13 @@
+// package <util>
 // SkipList implement by Golang
-// author: Liexusong
+// author: Jim Howard (c) liexusong at qq dot com
 
-package unit
+package util
 
 import(
     "time"
     "math/rand"
 )
-
 
 const MAX_LEVEL int = 32
 
@@ -133,12 +133,49 @@ func (l *SkipList) Find(key int) (val interface{}, err error) {
         }
     }
 
-    return nil, &SkipListError{"Not found key"}
+    return nil, &SkipListError{"Not found value by the search key"}
 }
 
 
 // delete the value of search key
 // return error by failed or nil by success
 func (l *SkipList) Delete(key int) error {
+    var q *SkipListNode
 
+    p := l.header
+    k := l.level
+
+    for i := k - 1; i >= 0; i-- {
+        for {
+            q = p.forward[i]
+            if q != nil && q.key < key {
+                p = q
+                continue
+            }
+            break
+        }
+
+        update[i] = p
+    }
+
+    if q != nil && q.key == key {
+        for i := 0; i < l.level; i++ {
+            if update[i].forward[i] == q {
+                update[i].forward[i] = q.forward[i]
+            }
+        }
+
+        q = nil
+
+        for i := l.level - 1; i >= 0; i-- {
+            if l.header.forward[i] == nil {
+                l.level--
+            }
+        }
+
+        return nil
+    }
+
+    return &SkipListError{"Not found value by the search key"}
 }
+
