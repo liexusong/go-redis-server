@@ -9,6 +9,7 @@ import(
     "math/rand"
 )
 
+
 const MAX_LEVEL int = 32
 
 type SkipListNode struct {
@@ -26,8 +27,8 @@ type SkipListError struct {
     msg string
 }
 
-var randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
 
+var randGen = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 // SkipList error object
 // return error message
@@ -68,7 +69,7 @@ func (l *SkipList) Insert(key int, val interface{}) {
     var p, q *SkipListNode
     var k int
 
-    update := [MAX_LEVEL]*SkipListNode
+    update := [MAX_LEVEL]*SkipListNode{}
 
     p = l.header
     k = l.level
@@ -142,6 +143,8 @@ func (l *SkipList) Find(key int) (val interface{}, err error) {
 func (l *SkipList) Delete(key int) error {
     var q *SkipListNode
 
+    update := [MAX_LEVEL]*SkipListNode{}
+
     p := l.header
     k := l.level
 
@@ -165,7 +168,7 @@ func (l *SkipList) Delete(key int) error {
             }
         }
 
-        q = nil
+        q = nil // decr refcount
 
         for i := l.level - 1; i >= 0; i-- {
             if l.header.forward[i] == nil {
@@ -178,4 +181,5 @@ func (l *SkipList) Delete(key int) error {
 
     return &SkipListError{"Not found value by the search key"}
 }
+
 
