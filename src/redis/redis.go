@@ -15,7 +15,15 @@ type Server struct {
 }
 
 
-var RedisDb map[string]interface{} = {} // Redis's database
+// Redis context
+type Context struct {
+    db map[string]interface{}
+    exit bool
+    ch chan int
+}
+
+
+var RedisContext *Context
 
 
 func ServerNew(ntype, laddr string) *Server {
@@ -28,6 +36,11 @@ func connGoFunc(conn *Connection) {
 }
 
 
+func contextInit() {
+    RedisContext = Context{make(map[string]interface), false, make(chan int)}
+}
+
+
 func (s *Server) Open() error {
     s.ln, err = net.Listen(s.ntype, s.laddr)
     
@@ -35,8 +48,8 @@ func (s *Server) Open() error {
         return err
     }
 
-    for {
-        client, err := ln.Accept()
+    for RedisContext.exit == false {
+        client, err := ln.Accept() // accept new client
         if err != nil {
             continue
         }
