@@ -10,16 +10,21 @@ import(
 
 type Connection struct {
     conn net.Conn
+    buff []byte
 }
 
 
-func RedisConnectionNew(conn net.Conn) {
-    return &Connection{conn}
+func ConnectNew(conn net.Conn) {
+    return &Connection{conn, make([]byte, 1024)}
 }
 
 
-func (c *Connection) MainLoop() {
-    for {
-        c.handler(c)
+func (c *Connection) Process() {
+    nbytes, err := c.conn.Read(c.buff) // read buffer from connection
+    if err != nil {
+        c.conn.Close()
+        return
     }
+
+    //todo: parse command
 }

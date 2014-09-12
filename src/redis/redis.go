@@ -12,17 +12,19 @@ type Server struct {
     ln net.Listener
     ntype string
     laddr string
-    db map[string] interface{}
 }
 
 
-func RedisServerNew(ntype, laddr string) *Server {
+var RedisDb map[string]interface{} = {} // Redis's database
+
+
+func ServerNew(ntype, laddr string) *Server {
     return &Server{nil, ntype, laddr}
 }
 
 
-func redisConnectionLoop(conn *Connection) {
-    conn.MainLoop()
+func connGoFunc(conn *Connection) {
+    conn.Process()
 }
 
 
@@ -39,11 +41,10 @@ func (s *Server) Open() error {
             continue
         }
 
-        conn := RedisConnectionNew(client)
+        conn := ConnectNew(client) // create new connection
 
-        go redisConnectionLoop(conn)
+        go connGoFunc(conn) // process connection
     }
 
     return nil
 }
-
