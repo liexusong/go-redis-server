@@ -37,7 +37,7 @@ func connGoFunc(conn *Connection) {
 
 
 func contextInit() {
-    RedisContext = Context{make(map[string]interface), false, make(chan int)}
+    RedisContext = &Context{make(map[string]interface), false, make(chan int)}
 }
 
 
