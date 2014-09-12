@@ -6,6 +6,7 @@ package redis
 import(
     "util"
     "net"
+    "sync"
 )
 
 type Server struct {
@@ -19,11 +20,11 @@ type Server struct {
 type Context struct {
     db map[string]interface{}
     exit bool
-    ch chan int
+    lock *sync.Mutex // lock database
 }
 
 
-var RedisContext *Context
+var Ctx *Context
 
 
 func ServerNew(ntype, laddr string) *Server {
@@ -37,7 +38,7 @@ func connGoFunc(conn *Connection) {
 
 
 func contextInit() {
-    RedisContext = &Context{make(map[string]interface), false, make(chan int)}
+    Ctx = &Context{make(map[string]interface{}), false, new(sync.Mutex)}
 }
 
 
@@ -48,7 +49,7 @@ func (s *Server) Open() error {
         return err
     }
 
-    for RedisContext.exit == false {
+    for Ctx.exit == false {
         client, err := ln.Accept() // accept new client
         if err != nil {
             continue
