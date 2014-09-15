@@ -24,7 +24,8 @@ type Context struct {
 }
 
 
-var Ctx *Context
+// Global context
+var GlobalCtx *Context
 
 
 func ServerNew(ntype, laddr string) *Server {
@@ -38,18 +39,20 @@ func connGoFunc(conn *Connection) {
 
 
 func contextInit() {
-    Ctx = &Context{make(map[string]interface{}), false, new(sync.Mutex)}
+    GlobalCtx = &Context{make(map[string]interface{}), false, new(sync.Mutex)}
 }
 
 
 func (s *Server) Open() error {
-    s.ln, err = net.Listen(s.ntype, s.laddr)
+    ln, err = net.Listen(s.ntype, s.laddr)
     
     if err != nil {
         return err
     }
 
-    for Ctx.exit == false {
+    s.ln = ln // save listener object
+
+    for GlobalCtx.exit == false {
         client, err := ln.Accept() // accept new client
         if err != nil {
             continue
