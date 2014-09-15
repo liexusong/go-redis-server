@@ -89,7 +89,7 @@ func (c *Connection) GetArgs() bool {
         last = last - curr
     }
 
-    c.args = make([]string, 0, args) // create args array
+    c.args = make([]string, args) // create args array
     state := READ_ARG_SIZE
     nsize := -1
 
@@ -140,8 +140,10 @@ func (c *Connection) GetArgs() bool {
 }
 
 
+// send data to client connection
+// return true when success or false when failed
 func (c *Connection) SendReply(msg string) bool {
-    wbuf := ([]byte)(msg)
+    wbuf := ([]byte)(msg) // change string to byte slice
     last, total := 0, len(wbuf)
 
     for {
@@ -192,3 +194,4 @@ again:
 
     goto again // process again
 }
+
