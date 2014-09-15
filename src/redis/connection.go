@@ -187,7 +187,7 @@ again:
         return
     }
 
-    ok := callback(c.args[1:])
+    ok := callback(c)
     if !ok {
         // todo: log error message
     }
