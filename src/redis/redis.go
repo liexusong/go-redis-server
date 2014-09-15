@@ -19,6 +19,7 @@ type Server struct {
 // Redis context
 type Context struct {
     db map[string]interface{}
+    expire map[string]int
     exit bool
     lock *sync.Mutex // lock database
 }
@@ -26,6 +27,7 @@ type Context struct {
 
 // Global context
 var GlobalCtx *Context
+var ctxInit bool = false
 
 
 func ServerNew(ntype, laddr string) *Server {
@@ -39,11 +41,18 @@ func connGoFunc(conn *Connection) {
 
 
 func contextInit() {
-    GlobalCtx = &Context{make(map[string]interface{}), false, new(sync.Mutex)}
+    if ctxInit {
+        return
+    }
+
+    GlobalCtx = &Context{make(map[string]interface{}), make(map[string]int),
+        false, new(sync.Mutex)}
 }
 
 
 func (s *Server) Open() error {
+    contextInit() // init global context
+
     ln, err = net.Listen(s.ntype, s.laddr)
     
     if err != nil {

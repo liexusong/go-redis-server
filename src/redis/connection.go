@@ -20,7 +20,7 @@ type Connection struct {
 }
 
 
-var cmdMaps[string]func([]string) bool = {
+var cmdMaps[string]func(c *Connection) bool = {
     "set": cmd.SetCmd,
     "get": cmd.GetCmd
 }
@@ -84,9 +84,8 @@ func (c *Connection) GetArgs() bool {
 
     // read args data
 
-    nbuf := make([]byte, 64)
     if last > curr + 1 {
-        copy(nbuf[0:], rbuf[curr:])
+        copy(rbuf[0:], rbuf[curr:]) // reset read buffer
         last = last - curr
     }
 
@@ -97,8 +96,9 @@ func (c *Connection) GetArgs() bool {
     for {
         switch state {
         case READ_ARG_SIZE:
-            nbytes, err := c.conn.Read(nbuf[last:])
+            nbytes, err := c.conn.Read(rbuf[last:])
             if err != nil {
+                fmt.Println(err)
                 return false
             }
 
@@ -108,13 +108,14 @@ func (c *Connection) GetArgs() bool {
                 continue
             }
 
-            if nbuf[0] != '$' { // invaild redis protocol
+            if rbuf[0] != '$' { // invaild redis protocol
+                fmt.Println("Invaild redis protocol")
                 return false
             }
 
             for cnt, i := 0, 1; i < last; i++ {
-                if nbuf[i] >= '0' && nbuf[i] <= '9' {
-                    cnt = cnt * 10 + (nbuf[i] - '0')
+                if rbuf[i] >= '0' && rbuf[i] <= '9' {
+                    cnt = cnt * 10 + int(rbuf[i] - '0')
                 } else {
                     nsize = cnt
                     curr = i
@@ -128,6 +129,7 @@ func (c *Connection) GetArgs() bool {
                     curr += 2 // point to real data offset
                     state = READ_ARG_DATA
                 } else {
+                    fmt.Println("Invaild redis protocol")
                     return false
                 }
             }
@@ -135,6 +137,28 @@ func (c *Connection) GetArgs() bool {
         case READ_ARG_DATA:
         }
     }
+}
+
+
+func (c *Connection) SendReply(msg string) bool {
+    wbuf := ([]byte)(msg)
+    last, total := 0, len(wbuf)
+
+    for {
+        nbytes, err := c.conn.Write(wbuf[last:])
+        if err != nil {
+            fmt.Println(err)
+            return false
+        }
+
+        last += nbytes
+
+        if last >= total {
+            break
+        }
+    }
+
+    return true
 }
 
 
