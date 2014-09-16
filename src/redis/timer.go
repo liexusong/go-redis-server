@@ -1,37 +1,39 @@
 // Redis server implement by Golang
 // author: Jim Howard (c) liexusong at qq dot com
+// simple timer implement by time.Timer
 
 package redis
 
 import(
     "time"
-    "util"
 )
 
-type TimerKick struct {
-    timer *time.Timer
-    rqueue *util.list
-}
+// Types for timer
 
 type TimerKickCb func(interface{})
 
 type TimerKickNode struct {
+    next *TimerKickNode
     freq int  // call frequency
     lrun int  // last run time
     cb TimerKickCb
     arg interface{}
 }
 
+type TimerKick struct {
+    ticker *time.Ticker
+    rqueue *TimerKickNode
+}
+
 
 func timerKickRunQueue(tk *TimerKick) {
-    nowts := time.Now().Unix()
+    now := time.Now().Unix()
 
     // run the queue
-    for node := tk.rqueue.head; node != nil; node = node.next {
-        ent := node.val.(*TimerKickNode)
-        if int(nowts) - ent.lrun >= freq {
-            ent.cb(ent.arg)
-            ent.lrun = nowts
+    for node := tk.rqueue; node != nil; node = node.next {
+        if int(now) - node.lrun >= node.freq {
+            node.cb(node.arg)
+            node.lrun = int(now)
         }
     }
 }
@@ -40,18 +42,18 @@ func timerKickRunQueue(tk *TimerKick) {
 func timerKickRutine(tk *TimerKick) {
     min := 99999999
 
-    for node := tk.rqueue.head; node != nil; node = node.next {
-        ent := node.val.(*TimerKickNode)
-        if ent.freq < min {
-            min = ent.freq
+    // find the min task
+    for node := tk.rqueue; node != nil; node = node.next {
+        if node.freq < min {
+            min = node.freq
         }
     }
 
-    tk.timer = time.NewTimer(min * time.Second)
+    tk.ticker = time.NewTicker(time.Duration(min) * time.Second)
 
     for {
         select {
-        case <- tk.timer.C
+        case <- tk.ticker.C:
             timerKickRunQueue(tk)
         }
     }
@@ -59,16 +61,17 @@ func timerKickRutine(tk *TimerKick) {
 
 
 func TimerKickNew() *TimerKick {
-    return &TimerKick{nil, util.ListNew()}
+    return &TimerKick{nil, nil}
 }
 
 
-func (tk *TimerKick) AddTimer(second int, cb TimerKickCb, arg interface{}) {
-    node := TimerKickNode{second, 0, cb, arg}
-    tk.rqueue.AddTail(node)
+func (tk *TimerKick) AddTimer(second int, cb TimerKickCb,arg interface{}) {
+    node := &TimerKickNode{tk.rqueue, second, 0, cb, arg}
+    tk.rqueue = node // add to queue
 }
 
 
 func (tk *TimerKick) Run() {
     go timerKickRutine(tk)
 }
+
