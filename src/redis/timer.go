@@ -28,7 +28,7 @@ func timerKickRunQueue(tk *TimerKick) {
 
     // run the queue
     for node := tk.rqueue.head; node != nil; node = node.next {
-        ent := (*TimerKickNode)(node.val)
+        ent := node.val.(*TimerKickNode)
         if int(nowts) - ent.lrun >= freq {
             ent.cb(ent.arg)
             ent.lrun = nowts
@@ -41,7 +41,7 @@ func timerKickRutine(tk *TimerKick) {
     min := 99999999
 
     for node := tk.rqueue.head; node != nil; node = node.next {
-        ent := (*TimerKickNode)(node.val)
+        ent := node.val.(*TimerKickNode)
         if ent.freq < min {
             min = ent.freq
         }

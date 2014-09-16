@@ -35,7 +35,7 @@ func ServerNew(ntype, laddr string) *Server {
 }
 
 
-func connGoFunc(conn *Connection) {
+func connRutine(conn *Connection) {
     conn.Process()
 }
 
@@ -69,7 +69,7 @@ func (s *Server) Open() error {
 
         conn := ConnectNew(client) // create new connection
 
-        go connGoFunc(conn) // process connection
+        go connRutine(conn) // process connection
     }
 
     return nil
