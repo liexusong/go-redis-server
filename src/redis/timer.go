@@ -1,6 +1,6 @@
 // Redis server implement by Golang
 // author: Jim Howard (c) liexusong at qq dot com
-// simple timer implement by time.Timer
+// simple timer generator implement by time.Ticker
 
 package redis
 
@@ -10,27 +10,27 @@ import(
 
 // Types for timer
 
-type TimerKickCb func(interface{})
+type TimerGenCb func(interface{})
 
-type TimerKickNode struct {
-    next *TimerKickNode
+type TimerGenNode struct {
+    next *TimerGenNode
     freq int  // call frequency
     lrun int  // last run time
-    cb TimerKickCb
+    cb TimerGenCb
     arg interface{}
 }
 
-type TimerKick struct {
+type TimerGen struct {
     ticker *time.Ticker
-    rqueue *TimerKickNode
+    rqueue *TimerGenNode
 }
 
 
-func timerKickRunQueue(tk *TimerKick) {
+func timerGenRunQueue(t *TimerGen) {
     now := time.Now().Unix()
 
     // run the queue
-    for node := tk.rqueue; node != nil; node = node.next {
+    for node := t.rqueue; node != nil; node = node.next {
         if int(now) - node.lrun >= node.freq {
             node.cb(node.arg)
             node.lrun = int(now)
@@ -39,39 +39,47 @@ func timerKickRunQueue(tk *TimerKick) {
 }
 
 
-func timerKickRutine(tk *TimerKick) {
+// private function for timer
+// using time.Ticker to generate signal
+func timerGenRutine(t *TimerGen) {
     min := 99999999
 
     // find the min task
-    for node := tk.rqueue; node != nil; node = node.next {
+    for node := t.rqueue; node != nil; node = node.next {
         if node.freq < min {
             min = node.freq
         }
     }
 
-    tk.ticker = time.NewTicker(time.Duration(min) * time.Second)
+    t.ticker = time.NewTicker(time.Duration(min) * time.Second)
 
     for {
         select {
-        case <- tk.ticker.C:
-            timerKickRunQueue(tk)
+        case <- t.ticker.C:
+            timerGenRunQueue(t)
         }
     }
 }
 
 
-func TimerKickNew() *TimerKick {
-    return &TimerKick{nil, nil}
+// create new timer generator
+// return TimerGen object
+func TimerGenNew() *TimerGen {
+    return &TimerGen{nil, nil}
 }
 
 
-func (tk *TimerKick) AddTimer(second int, cb TimerKickCb,arg interface{}) {
-    node := &TimerKickNode{tk.rqueue, second, 0, cb, arg}
-    tk.rqueue = node // add to queue
+// add timer to timer generator
+// return void
+func (t *TimerGen) AddTimer(second int, cb TimerGenCb,arg interface{}) {
+    node := &TimerGenNode{t.rqueue, second, 0, cb, arg}
+    t.rqueue = node // add to queue
 }
 
 
-func (tk *TimerKick) Run() {
-    go timerKickRutine(tk)
+// run all timer
+// async execute by goroutine
+func (t *TimerGen) Run() {
+    go timerGenRutine(t)
 }
 
