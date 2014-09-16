@@ -91,7 +91,11 @@ func (c *Connection) GetArgs() bool {
 
     c.args = make([]string, args) // create args array
     state := READ_ARG_SIZE
-    nsize := -1
+
+    var psize int
+    var pcurr int
+    var pdata []byte
+    var pinit bool
 
     for {
         switch state {
@@ -117,7 +121,7 @@ func (c *Connection) GetArgs() bool {
                 if rbuf[i] >= '0' && rbuf[i] <= '9' {
                     cnt = cnt * 10 + int(rbuf[i] - '0')
                 } else {
-                    nsize = cnt
+                    psize = cnt
                     curr = i
                     break
                 }
@@ -128,6 +132,7 @@ func (c *Connection) GetArgs() bool {
                 if rbuf[curr] == '\r' && rbuf[curr + 1] == '\n' {
                     curr += 2 // point to real data offset
                     state = READ_ARG_DATA
+                    pinit = false
                 } else {
                     fmt.Println("Invaild redis protocol")
                     return false
@@ -135,6 +140,23 @@ func (c *Connection) GetArgs() bool {
             }
 
         case READ_ARG_DATA:
+            if pinit == false {
+                pdata = make([]byte, psize)
+                pcurr = 0
+                pinit = true
+            }
+
+            nbytes, err := c.conn.Read(pdata[pcurr:])
+            if err != nil {
+                fmt.Println(err)
+                return false
+            }
+
+            pcurr += nbytes
+            if pcurr >= psize {
+                c.args.append(string(pdata)) // append to connection's args
+                state = READ_ARG_SIZE
+            }
         }
     }
 }
@@ -179,11 +201,11 @@ again:
         return
     }
 
-    cmdName := c.args[0] // command name
+    cmdName := c.args[0]
 
     callback, ok := cmdMaps[cmdName] // command callback
     if !ok {
-        // todo: log error message
+        fmt.Println("Not found command `%s'\n", cmdName)
         return
     }
 

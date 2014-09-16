@@ -11,7 +11,7 @@ func SetCmd(c *Connection) bool {
     GlobalCtx.lock.Lock()
 
     GlobalCtx.db[c.args[1]] = args[2]
-    
+
     GlobalCtx.lock.Unlock()
 
     c.SendReply("+OK")
