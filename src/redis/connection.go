@@ -82,7 +82,7 @@ func (c *Connection) GetArgs() bool {
         }
     }
 
-    // read args data
+    // read args size and data
 
     if last > curr + 1 {
         copy(rbuf[0:], rbuf[curr:]) // reset read buffer
@@ -92,6 +92,7 @@ func (c *Connection) GetArgs() bool {
     c.args = make([]string, args) // create args array
     state := READ_ARG_SIZE
 
+    // using for read arg data
     var psize int
     var pcurr int
     var pdata []byte
@@ -186,7 +187,7 @@ func (c *Connection) SendReply(msg string) bool {
 }
 
 
-// process connection
+// process connection, support pipeline
 // return void
 func (c *Connection) Process() {
 again:

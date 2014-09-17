@@ -5,6 +5,7 @@ package redis
 
 import(
     "util"
+    "timer"
     "net"
     "sync"
 )
@@ -21,6 +22,7 @@ type Context struct {
     db map[string]interface{}
     expire map[string]int
     exit bool
+    timer *timer.TimerGen
     lock *sync.Mutex // lock database
 }
 
@@ -40,13 +42,22 @@ func connRutine(conn *Connection) {
 }
 
 
+// redis's crontab function
+func redisCrontab(arg interface{}) {
+
+}
+
+
 func contextInit() {
     if ctxInit {
         return
     }
 
     GlobalCtx = &Context{make(map[string]interface{}), make(map[string]int),
-        false, new(sync.Mutex)}
+        false, TimerGenNew(), new(sync.Mutex)}
+
+    GlobalCtx.timer.AddTimer(1, redisCrontab, nil) // 1 second was called
+    GlobalCtx.timer.Run() // run timer
 }
 
 

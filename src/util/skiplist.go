@@ -28,6 +28,7 @@ type SkipListError struct {
 }
 
 
+// random number gen
 var randGen = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 // SkipList error object
@@ -38,7 +39,7 @@ func (err *SkipListError) Error() string {
 
 // private function for create SkipListNode
 // return SkipListNode pointer
-func nodeNew(key int, val interface{}, level int) *SkipListNode {
+func skipListNodeNew(key int, val interface{}, level int) *SkipListNode {
     return &SkipListNode{key, val, make([]*SkipListNode, level)}
 }
 
@@ -59,7 +60,7 @@ func randLevel() int {
 // public function for create new SkipList
 // return SkipList object pointer
 func SkipListNew() *SkipList {
-    return &SkipList{nodeNew(0, nil, MAX_LEVEL), 0}
+    return &SkipList{skipListNodeNew(0, nil, MAX_LEVEL), 0}
 }
 
 
@@ -100,7 +101,7 @@ func (l *SkipList) Insert(key int, val interface{}) {
         l.level = k
     }
 
-    q = nodeNew(key, val, k)
+    q = skipListNodeNew(key, val, k)
 
     for i := 0; i < k; i++ {
         q.forward[i] = update[i].forward[i]
